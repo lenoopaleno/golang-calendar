@@ -10,36 +10,50 @@ import (
 )
 
 func main() {
-	ChooseEndDate()
-	fmt.Println(cal())
+
+	serialized, name := cal()
+
+	f, err := os.Create(name + ".ics")
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer f.Close()
+
+	_, err2 := f.WriteString(serialized)
+
+	if err2 != nil {
+		log.Fatal(err2)
+	}
 }
 
-func cal() string {
+func cal() (string, string) {
 
 	name, description := ChooseName()
-	startdate := ChooseStartDate()
+	startDate := ChooseStartDate()
 
 	cal := ics.NewCalendar()
 	cal.SetMethod(ics.MethodRequest)
 	event := cal.AddEvent(fmt.Sprintf(name))
-	//event.SetCreatedTime(time.Now())
+
 	//event.SetDtStampTime(time.Now())
 	//event.SetModifiedAt(time.Now())
-	event.SetStartAt(startdate)
-	event.SetEndAt(time.Now())
-	event.SetSummary("Summary")
-	event.SetLocation("Address")
+	event.SetStartAt(startDate)
+	//event.SetEndAt(time.Now())
+	event.SetSummary(name)
+	event.SetDuration(ChooseEndDate())
+	//event.SetLocation("Address")
 	if description == "" {
 		event.SetDescription("Description")
 	} else {
 		event.SetDescription(description)
 	}
-
-	event.SetURL("https://URL/")
-	event.AddRrule(fmt.Sprintf("FREQ=YEARLY;BYMONTH=%d;BYMONTHDAY=%d", time.Now().Month(), time.Now().Day()))
-	event.SetOrganizer("sender@domain", ics.WithCN("This Machine"))
-	event.AddAttendee("reciever or participant", ics.CalendarUserTypeIndividual, ics.ParticipationStatusNeedsAction, ics.ParticipationRoleReqParticipant, ics.WithRSVP(true))
-	return cal.Serialize()
+	//event.SetURL("https://URL/")
+	//event.AddRrule(fmt.Sprintf("FREQ=YEARLY;BYMONTH=%d;BYMONTHDAY=%d", time.Now().Month(), time.Now().Day()))
+	//event.SetOrganizer("sender@domain", ics.WithCN("This Machine"))
+	//event.AddAttendee("reciever or participant", ics.CalendarUserTypeIndividual, ics.ParticipationStatusNeedsAction, ics.ParticipationRoleReqParticipant, ics.WithRSVP(true))
+	return cal.Serialize(), name
 }
 
 func ChooseStartDate() time.Time {
@@ -63,13 +77,14 @@ func ChooseStartDate() time.Time {
 	fmt.Println("And what minute?")
 	var min int
 	_, err = fmt.Scanf("%v", &min)
-	date := time.Date(yyyy, mm, dd, hour, min, 0, 0, time.UTC)
+	date := time.Date(yyyy, mm, dd, hour, min, 0, 0, time.Local)
+
 	return date
 }
 
 func ChooseEndDate() time.Duration {
 	var dur time.Duration
-	fmt.Println("Do you want to choose the duration for this event?")
+	fmt.Println("Do you want to choose the duration for this event?\n type Y or N")
 	var ans string
 	_, err := fmt.Scanf("%s", &ans)
 	if err != nil {
