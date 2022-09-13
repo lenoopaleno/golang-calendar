@@ -60,7 +60,7 @@ func ChooseStartDate() time.Time {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("Do you want to choose starting time of your event?\n Type Y or N: ")
+	fmt.Println("Do you want to choose starting time of your event?")
 	var hour, min time.Duration
 	ans := YesOrNo()
 	if ans {
@@ -74,28 +74,22 @@ func ChooseStartDate() time.Time {
 }
 
 func ChooseEndDate() time.Duration {
-	var dur time.Duration
-	fmt.Println("Do you want to choose the duration for this event?\n type Y or N")
+	scanner := bufio.NewScanner(os.Stdin)
+
+	var durationParsed time.Duration
+	var err error
+	fmt.Println("Do you want to choose the duration for this event?")
 	ans := YesOrNo()
 	if ans {
-		var hour string
-		var min string
-		fmt.Println("Choose your time:")
-		fmt.Println("Hour:")
-		_, err := fmt.Scanf("%s", &hour)
-		hour = hour + "h"
-		fmt.Println("Minute:")
-		_, err = fmt.Scanf("%s", &min)
-		min = min + "m"
-
-		duration := hour + min
-
-		dur, err = time.ParseDuration(duration)
+		fmt.Println("Choose duration of your event (e.g 10h20m; 24m; 2h)")
+		scanner.Scan() // use `for scanner.Scan()` to keep reading
+		duration := scanner.Text()
+		durationParsed, err = time.ParseDuration(duration)
 		if err != nil {
 			log.Fatal(err)
 		}
 	}
-	return dur
+	return durationParsed
 }
 
 func ChooseName() (string, string) {
@@ -135,3 +129,9 @@ func YesOrNo() bool {
 	}
 	return res
 }
+
+/*
+	TODO: Additional "func.go" file to store functions
+	TODO: ChooseAddress function
+	TODO: Automatic execution of .ics file
+*/
