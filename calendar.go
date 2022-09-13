@@ -6,23 +6,23 @@ import (
 	ics "github.com/arran4/golang-ical"
 	"log"
 	"os"
+	"strings"
 	"time"
 )
+
+const shortForm = "2006-01-02"
 
 func main() {
 
 	serialized, name := cal()
 
 	f, err := os.Create(name + ".ics")
-
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	defer f.Close()
 
 	_, err2 := f.WriteString(serialized)
-
 	if err2 != nil {
 		log.Fatal(err2)
 	}
@@ -37,10 +37,7 @@ func cal() (string, string) {
 	cal.SetMethod(ics.MethodRequest)
 	event := cal.AddEvent(fmt.Sprintf(name))
 
-	//event.SetDtStampTime(time.Now())
-	//event.SetModifiedAt(time.Now())
 	event.SetStartAt(startDate)
-	//event.SetEndAt(time.Now())
 	event.SetSummary(name)
 	event.SetDuration(ChooseEndDate())
 	//event.SetLocation("Address")
@@ -49,53 +46,43 @@ func cal() (string, string) {
 	} else {
 		event.SetDescription(description)
 	}
-	//event.SetURL("https://URL/")
-	//event.AddRrule(fmt.Sprintf("FREQ=YEARLY;BYMONTH=%d;BYMONTHDAY=%d", time.Now().Month(), time.Now().Day()))
-	//event.SetOrganizer("sender@domain", ics.WithCN("This Machine"))
-	//event.AddAttendee("reciever or participant", ics.CalendarUserTypeIndividual, ics.ParticipationStatusNeedsAction, ics.ParticipationRoleReqParticipant, ics.WithRSVP(true))
 	return cal.Serialize(), name
 }
 
 func ChooseStartDate() time.Time {
 	//Date  choose
+	scanner := bufio.NewScanner(os.Stdin)
 	fmt.Println("Set a starting point of your event")
-	fmt.Println("Provide the year:")
-	var yyyy int
-	_, err := fmt.Scanf("%v", &yyyy)
+	fmt.Println("Provide a date in this form: YYYY-MM-DD")
+	scanner.Scan() // use `for scanner.Scan()` to keep reading
+	date := scanner.Text()
+	dateParsed, err := time.Parse(shortForm, date)
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("Provide the month (without '0' in front):")
-	var mm time.Month
-	_, err = fmt.Scanf("%v", &mm)
-	fmt.Println("Provide the day")
-	var dd int
-	_, err = fmt.Scanf("%v", &dd)
-	fmt.Println("What is hour of event? (24h clock)")
-	var hour int
-	_, err = fmt.Scanf("%v", &hour)
-	fmt.Println("And what minute?")
-	var min int
-	_, err = fmt.Scanf("%v", &min)
-	date := time.Date(yyyy, mm, dd, hour, min, 0, 0, time.Local)
+	fmt.Println("Do you want to choose starting time of your event?\n Type Y or N: ")
+	var hour, min time.Duration
+	ans := YesOrNo()
+	if ans {
+		fmt.Println("Choose starting hour for your event (e.g 11:32)")
+		fmt.Scanf("%v:%v", &hour, &min)
+	}
+	dateParsed = dateParsed.Add(time.Hour * hour)
+	dateParsed = dateParsed.Add(time.Minute * min)
 
-	return date
+	return dateParsed
 }
 
 func ChooseEndDate() time.Duration {
 	var dur time.Duration
 	fmt.Println("Do you want to choose the duration for this event?\n type Y or N")
-	var ans string
-	_, err := fmt.Scanf("%s", &ans)
-	if err != nil {
-		log.Fatal(err)
-	}
-	if ans == "Y" {
+	ans := YesOrNo()
+	if ans {
 		var hour string
 		var min string
 		fmt.Println("Choose your time:")
 		fmt.Println("Hour:")
-		_, err = fmt.Scanf("%s", &hour)
+		_, err := fmt.Scanf("%s", &hour)
 		hour = hour + "h"
 		fmt.Println("Minute:")
 		_, err = fmt.Scanf("%s", &min)
@@ -120,10 +107,9 @@ func ChooseName() (string, string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("Would you like to add desctription to %s?\n type Y or N", name)
-	var ans string
-	_, err = fmt.Scanln(&ans)
-	if ans == "Y" {
+	fmt.Printf("Would you like to add desctription to %s?\n", name)
+	ans := YesOrNo()
+	if ans {
 		fmt.Println("Add your description here:")
 		scanner.Scan() // use `for scanner.Scan()` to keep reading
 		description = scanner.Text()
@@ -131,4 +117,21 @@ func ChooseName() (string, string) {
 		description = ""
 	}
 	return name, description
+}
+
+func YesOrNo() bool {
+	var res bool
+	scanner := bufio.NewScanner(os.Stdin)
+	fmt.Println("Type Y or N")
+	scanner.Scan() // use `for scanner.Scan()` to keep reading
+	ans := strings.ToUpper(scanner.Text())
+	if ans == "Y" || ans == "YES" {
+		res = true
+	} else if ans == "N" || ans == "NO" {
+		res = false
+	} else {
+		fmt.Println("You provide wrong answer. Please type 'Y' for yes, or 'N' for no")
+		YesOrNo()
+	}
+	return res
 }
