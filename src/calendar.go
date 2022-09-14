@@ -6,6 +6,7 @@ import (
 	ics "github.com/arran4/golang-ical"
 	"log"
 	"os"
+	"os/exec"
 	"strings"
 	"time"
 )
@@ -26,21 +27,25 @@ func main() {
 	if err2 != nil {
 		log.Fatal(err2)
 	}
+	cmd := exec.Command("~/" + name + ".ics")
+	err = cmd.Run()
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func cal() (string, string) {
 
 	name, description := ChooseName()
-	startDate := ChooseStartDate()
 
 	cal := ics.NewCalendar()
 	cal.SetMethod(ics.MethodRequest)
 	event := cal.AddEvent(fmt.Sprintf(name))
 
-	event.SetStartAt(startDate)
+	event.SetStartAt(ChooseStartDate())
 	event.SetSummary(name)
 	event.SetDuration(ChooseEndDate())
-	//event.SetLocation("Address")
+	event.SetLocation(ChooseAddress())
 	if description == "" {
 		event.SetDescription("Description")
 	} else {
@@ -54,7 +59,7 @@ func ChooseStartDate() time.Time {
 	scanner := bufio.NewScanner(os.Stdin)
 	fmt.Println("Set a starting point of your event")
 	fmt.Println("Provide a date in this form: YYYY-MM-DD")
-	scanner.Scan() // use `for scanner.Scan()` to keep reading
+	scanner.Scan()
 	date := scanner.Text()
 	dateParsed, err := time.Parse(shortForm, date)
 	if err != nil {
@@ -130,8 +135,20 @@ func YesOrNo() bool {
 	return res
 }
 
+func ChooseAddress() string {
+	var address string
+	fmt.Println("Do you want to choose address for this event?")
+	ans := YesOrNo()
+	if ans {
+		fmt.Println("Provide address fo your event: ")
+		scanner := bufio.NewScanner(os.Stdin)
+		scanner.Scan()
+		address = scanner.Text()
+		return address
+	}
+	return address
+}
+
 /*
-	TODO: Additional "func.go" file to store functions
-	TODO: ChooseAddress function
 	TODO: Automatic execution of .ics file
 */
